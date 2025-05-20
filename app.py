@@ -21,7 +21,7 @@ if uploaded_file:
     df['TARIF'] = pd.to_numeric(df['TARIF'], errors='coerce')
     df['ASAL'] = df['ASAL'].astype(str).str.upper().str.strip()
 
-    lokasi_lengkap = ['MERAK', 'BAKAUHENI', 'KETAPANG', 'GILIMANUK']
+    pelabuhan_lengkap = ['MERAK', 'BAKAUHENI', 'KETAPANG', 'GILIMANUK']
 
     col1, col2 = st.columns(2)
     with col1:
@@ -29,7 +29,6 @@ if uploaded_file:
     with col2:
         date_pengurangan = st.date_input("📅 Tanggal Pengurangan", value=df['CETAK BOARDING PASS'].max())
 
-    # Filter jam 0-7
     df_penambahan = df[
         (df['CETAK BOARDING PASS'] == date_penambahan) &
         (df['JAM'] >= 0) & (df['JAM'] <= 7)
@@ -39,12 +38,11 @@ if uploaded_file:
         (df['JAM'] >= 0) & (df['JAM'] <= 7)
     ]
 
-    penambahan = df_penambahan.groupby('ASAL')['TARIF'].sum().reindex(lokasi_lengkap, fill_value=0)
-    pengurangan = df_pengurangan.groupby('ASAL')['TARIF'].sum().reindex(lokasi_lengkap, fill_value=0)
+    penambahan = df_penambahan.groupby('ASAL')['TARIF'].sum().reindex(pelabuhan_lengkap, fill_value=0)
+    pengurangan = df_pengurangan.groupby('ASAL')['TARIF'].sum().reindex(pelabuhan_lengkap, fill_value=0)
 
     result = pd.DataFrame({
-        'No': range(1, len(lokasi_lengkap)+1),
-        'Lokasi': lokasi_lengkap,
+        'Pelabuhan Asal': pelabuhan_lengkap,
         'Penambahan': penambahan.values,
         'Pengurangan': pengurangan.values
     })
@@ -52,13 +50,11 @@ if uploaded_file:
     total_penambahan = result['Penambahan'].sum()
     total_pengurangan = result['Pengurangan'].sum()
 
-    # Format nominal
     result['Penambahan'] = result['Penambahan'].apply(lambda x: f"Rp {x:,.0f}".replace(",", "."))
     result['Pengurangan'] = result['Pengurangan'].apply(lambda x: f"Rp {x:,.0f}".replace(",", "."))
 
     total_row = pd.DataFrame([{
-        'No': '',
-        'Lokasi': 'TOTAL',
+        'Pelabuhan Asal': 'TOTAL',
         'Penambahan': f"Rp {total_penambahan:,.0f}".replace(",", "."),
         'Pengurangan': f"Rp {total_pengurangan:,.0f}".replace(",", ".")
     }])

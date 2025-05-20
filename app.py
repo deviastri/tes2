@@ -59,4 +59,4 @@ if uploaded_file:
     st.dataframe(result, use_container_width=True)
 
 else:
-    st.info("Silakan unggah file Excel untuk mem
+    st.info("Silakan unggah file Excel untuk memulai.")

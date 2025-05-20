@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 st.set_page_config(page_title="📈 Rekap Penambahan & Pengurangan", layout="wide")
-st.title("📆 Laporan Penambahan & Pengurangan Tarif Berdasarkan Lokasi")
+st.title("📆 Laporan Penambahan & Pengurangan Tarif (Jam 0–8)")
 
 uploaded_file = st.file_uploader("📄 Upload Data Excel Boarding", type=["xlsx"])
 
@@ -10,7 +10,6 @@ if uploaded_file:
     df = pd.read_excel(uploaded_file)
     df.columns = df.columns.str.strip()
 
-    # Parsing kolom
     df['CETAK BOARDING PASS'] = pd.to_datetime(df['CETAK BOARDING PASS'], errors='coerce').dt.date
     df = df.dropna(subset=['CETAK BOARDING PASS'])
 
@@ -19,28 +18,45 @@ if uploaded_file:
     df['ASAL'] = df['ASAL'].astype(str).str.upper().str.strip()
 
     lokasi_lengkap = ['MERAK', 'BAKAUHENI', 'KETAPANG', 'GILIMANUK']
-    selected_date = st.date_input("📅 Pilih Tanggal", value=df['CETAK BOARDING PASS'].min())
 
-    # Filter berdasarkan tanggal & jam 0–8
-    filtered_df = df[
-        (df['CETAK BOARDING PASS'] == selected_date) &
+    col1, col2 = st.columns(2)
+    with col1:
+        date_penambahan = st.date_input("📅 Tanggal untuk Penambahan", value=df['CETAK BOARDING PASS'].min())
+    with col2:
+        date_pengurangan = st.date_input("📅 Tanggal untuk Pengurangan", value=df['CETAK BOARDING PASS'].max())
+
+    # Filter JAM 0–8 untuk kedua tanggal
+    df_penambahan = df[
+        (df['CETAK BOARDING PASS'] == date_penambahan) &
+        (df['JAM'] >= 0) & (df['JAM'] <= 8)
+    ]
+    df_pengurangan = df[
+        (df['CETAK BOARDING PASS'] == date_pengurangan) &
         (df['JAM'] >= 0) & (df['JAM'] <= 8)
     ]
 
     penambahan = (
-        filtered_df.groupby('ASAL')['TARIF']
+        df_penambahan.groupby('ASAL')['TARIF']
         .sum().reindex(lokasi_lengkap, fill_value=0)
-        .reset_index()
     )
-    penambahan.columns = ['Lokasi', 'Penambahan']
-    penambahan['Pengurangan'] = 0  # placeholder kolom
+    pengurangan = (
+        df_pengurangan.groupby('ASAL')['TARIF']
+        .sum().reindex(lokasi_lengkap, fill_value=0)
+    )
 
-    # Format nominal
-    penambahan['Penambahan'] = penambahan['Penambahan'].apply(lambda x: f"Rp {x:,.0f}".replace(",", "."))
-    penambahan['Pengurangan'] = penambahan['Pengurangan'].apply(lambda x: f"Rp {x:,.0f}".replace(",", "."))
+    result = pd.DataFrame({
+        'Lokasi': lokasi_lengkap,
+        'Penambahan': penambahan.values,
+        'Pengurangan': pengurangan.values
+    })
 
-    st.subheader(f"Hasil Rekap: {selected_date.strftime('%d %B %Y')}")
-    st.dataframe(penambahan, use_container_width=True)
+    result['Penambahan'] = result['Penambahan'].apply(lambda x: f"Rp {x:,.0f}".replace(",", "."))
+    result['Pengurangan'] = result['Pengurangan'].apply(lambda x: f"Rp {x:,.0f}".replace(",", "."))
+
+    st.subheader("📊 Hasil Rekap")
+    st.write(f"📅 Penambahan dari tanggal: {date_penambahan.strftime('%d %B %Y')}")
+    st.write(f"📅 Pengurangan dari tanggal: {date_pengurangan.strftime('%d %B %Y')}")
+    st.dataframe(result, use_container_width=True)
 
 else:
-    st.info("Silakan unggah file Excel untuk mulai.")
+    st.info("Silakan unggah file Excel untuk mem

@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 st.set_page_config(page_title="📈 Rekap Penambahan & Pengurangan", layout="wide")
-st.title("📆 Laporan Penambahan & Pengurangan Tarif (Jam 0–8)")
+st.title("📆 Laporan Penambahan & Pengurangan Tarif (Jam 0–7)")
 
 uploaded_file = st.file_uploader("📄 Upload Data Excel Boarding", type=["xlsx"])
 
@@ -25,14 +25,14 @@ if uploaded_file:
     with col2:
         date_pengurangan = st.date_input("📅 Tanggal untuk Pengurangan", value=df['CETAK BOARDING PASS'].max())
 
-    # Filter JAM 0–8 untuk kedua tanggal
+    # Filter JAM 0–7
     df_penambahan = df[
         (df['CETAK BOARDING PASS'] == date_penambahan) &
-        (df['JAM'] >= 0) & (df['JAM'] <= 8)
+        (df['JAM'] >= 0) & (df['JAM'] <= 7)
     ]
     df_pengurangan = df[
         (df['CETAK BOARDING PASS'] == date_pengurangan) &
-        (df['JAM'] >= 0) & (df['JAM'] <= 8)
+        (df['JAM'] >= 0) & (df['JAM'] <= 7)
     ]
 
     penambahan = (

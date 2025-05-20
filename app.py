@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+from io import BytesIO
 
 st.set_page_config(page_title="📊 Rekap Tarif ASDP", layout="wide")
 
@@ -50,8 +51,9 @@ if uploaded_file:
     total_penambahan = result['Penambahan'].sum()
     total_pengurangan = result['Pengurangan'].sum()
 
-    result['Penambahan'] = result['Penambahan'].apply(lambda x: f"Rp {x:,.0f}".replace(",", "."))
-    result['Pengurangan'] = result['Pengurangan'].apply(lambda x: f"Rp {x:,.0f}".replace(",", "."))
+    result_display = result.copy()
+    result_display['Penambahan'] = result_display['Penambahan'].apply(lambda x: f"Rp {x:,.0f}".replace(",", "."))
+    result_display['Pengurangan'] = result_display['Pengurangan'].apply(lambda x: f"Rp {x:,.0f}".replace(",", "."))
 
     total_row = pd.DataFrame([{
         'Pelabuhan Asal': 'TOTAL',
@@ -59,12 +61,28 @@ if uploaded_file:
         'Pengurangan': f"Rp {total_pengurangan:,.0f}".replace(",", ".")
     }])
 
-    final_df = pd.concat([result, total_row], ignore_index=True)
+    final_df_display = pd.concat([result_display, total_row], ignore_index=True)
 
     st.subheader("📊 Tabel Rekapitulasi")
     st.write(f"📅 Penambahan: {date_penambahan.strftime('%d %B %Y')} | Pengurangan: {date_pengurangan.strftime('%d %B %Y')}")
-    st.dataframe(final_df, use_container_width=True)
+    st.dataframe(final_df_display, use_container_width=True)
 
-    st.success("✅ Data berhasil direkap.")
+    # Ekspor ke Excel
+    def convert_df_to_excel(df_raw):
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df_raw.to_excel(writer, index=False, sheet_name='Rekap')
+        output.seek(0)
+        return output
+
+    excel_bytes = convert_df_to_excel(result)
+    st.download_button(
+        label="⬇️ Unduh Excel Rekap",
+        data=excel_bytes,
+        file_name="rekap_penambahan_pengurangan.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+    st.success("✅ Data berhasil direkap & siap diunduh.")
 else:
     st.info("Silakan unggah file Excel untuk memulai.")

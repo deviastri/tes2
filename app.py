@@ -11,7 +11,9 @@ if uploaded_file:
     df = pd.read_excel(uploaded_file)
     df.columns = df.columns.str.lower().str.strip()
 
-    df['cetak boarding pass'] = pd.to_datetime(df['cetak boarding pass']).dt.date
+    df['cetak boarding pass'] = pd.to_datetime(df['cetak boarding pass'], errors='coerce').dt.date
+    df = df.dropna(subset=['cetak boarding pass'])
+
     df['jam'] = pd.to_numeric(df['jam'], errors='coerce')
     df['tarif'] = pd.to_numeric(df['tarif'], errors='coerce')
     df['keberangkatan'] = df['keberangkatan'].str.upper().str.strip()
